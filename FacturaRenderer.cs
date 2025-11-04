@@ -66,7 +66,7 @@ namespace RECIBOS_OFRENDA
                 if (lw > usableWidth) lw = usableWidth;
                 if (lh <= 0) lh = (int)Math.Max(1, usableWidth * ratio);
 
-                var xLogo = leftMargin + (usableWidth - lw) / 2;
+                var xLogo = leftMargin + (usableWidth - lw) / 2 + AppConfig.LogoOffsetXPx;
                 g.DrawImage(logo, new Rectangle(xLogo, yPos, lw, lh));
                 yPos += lh + 6;
             }

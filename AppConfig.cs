@@ -20,13 +20,14 @@ namespace RECIBOS_OFRENDA
         public static float SmallFontSize => GetFloat("smallFontSize", 9.5f);
 
         // Tamaños de fuente en píxeles (toman prioridad si > 0)
-        public static int HeaderFontPx => GetInt("headerFontPx", 20);
+        public static int HeaderFontPx => GetInt("headerFontPx", 18);
         public static int NormalFontPx => GetInt("normalFontPx", 14);
         public static int SmallFontPx  => GetInt("smallFontPx", 12);
 
         public static double LogoMaxPercent => GetDouble("logoMaxPercent", 0.35);
         public static double LogoMaxWidthMm => GetDouble("logoMaxWidthMm", 32.0);
         public static double LogoMaxHeightMm => GetDouble("logoMaxHeightMm", 16.0);
+        public static int LogoOffsetXPx => GetInt("logoOffsetXPx", 0); // ajuste fino horizontal del logo (+ derecha / - izquierda)
 
         public static string ThermalLogoFullPath
         {
