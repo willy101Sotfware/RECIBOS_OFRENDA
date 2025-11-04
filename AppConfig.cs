@@ -20,7 +20,7 @@ namespace RECIBOS_OFRENDA
         public static float SmallFontSize => GetFloat("smallFontSize", 9.5f);
 
         // Tamaños de fuente en píxeles (toman prioridad si > 0)
-        public static int HeaderFontPx => GetInt("headerFontPx", 18);
+        public static int HeaderFontPx => GetInt("headerFontPx", 15);
         public static int NormalFontPx => GetInt("normalFontPx", 14);
         public static int SmallFontPx  => GetInt("smallFontPx", 12);
 
