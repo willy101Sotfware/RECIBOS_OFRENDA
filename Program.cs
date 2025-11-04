@@ -82,6 +82,17 @@ namespace RECIBOS_OFRENDA
                         var status = PrintService.PrintBitmap(saved);
                         Console.WriteLine($"Intento de impresión: {status} - {PrintService.EvaluateStatus((int)status)}");
 
+                        // Cortar papel si la impresión fue exitosa
+                        if (status == DefaultPrinterStatus.PrinterIsOk)
+                        {
+                            try
+                            {
+                                PrintService.CutPaper();
+                                Console.WriteLine("Papel cortado.");
+                            }
+                            catch { /* Ignorar si el corte falla */ }
+                        }
+
                         // Fallback: si Msprintsdk falla, usar PrintDocument de Windows
                         if (status != DefaultPrinterStatus.PrinterIsOk)
                         {

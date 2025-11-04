@@ -117,13 +117,13 @@ namespace RECIBOS_OFRENDA
             var thanksSize = g.MeasureString(thanks, normalFont);
             float thanksX = (paperWidth - thanksSize.Width) / 2f;
             g.DrawString(thanks, normalFont, blackBrush, thanksX, yPos);
-            yPos += (int)(lineHeight * 2);
+            yPos += (int)(lineHeight * 1.5f);
 
-            // Padding final
-            DrawLine(g, " ", smallFont, blackBrush, leftMargin, ref yPos, lineHeight);
+            // Padding final mínimo
+            yPos += 8;
 
             // Recortar y guardar
-            int finalHeight = yPos + 16;
+            int finalHeight = yPos;
             using var finalBmp = new Bitmap(paperWidth, finalHeight);
             finalBmp.SetResolution(203, 203);
             using (var g2 = Graphics.FromImage(finalBmp))

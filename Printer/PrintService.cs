@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -45,6 +45,11 @@ namespace WPF_LA_OFRENDA_V1.Domain.Peripherals
         public static DefaultPrinterStatus SetPrintMark(int value)
         {
             return PrintCommands.SetBlackmark(value);
+        }
+
+        public static DefaultPrinterStatus CutPaper()
+        {
+            return PrintCommands.CutPaper();
         }
 
         public static DefaultPrinterStatus SetMargin()
@@ -406,6 +411,16 @@ namespace WPF_LA_OFRENDA_V1.Domain.Peripherals
             }
             //PrintMarkposition();
             //PrintMarkcutpaper(1);
+            SetClose();
+            if (status == 1) return DefaultPrinterStatus.ErrorWhenExecutingDllCommand;
+            if (status == 0) return DefaultPrinterStatus.PrinterIsOk;
+            return (DefaultPrinterStatus)status;
+        }
+        public DefaultPrinterStatus CutPaper()
+        {
+            var isConnected = ConfigurePrinter();
+            if (!isConnected) return DefaultPrinterStatus.CantConnectToPrinter;
+            var status = PrintCutpaper(0); // 0 = corte completo
             SetClose();
             if (status == 1) return DefaultPrinterStatus.ErrorWhenExecutingDllCommand;
             if (status == 0) return DefaultPrinterStatus.PrinterIsOk;
