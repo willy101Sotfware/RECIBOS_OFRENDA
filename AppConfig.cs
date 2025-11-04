@@ -8,10 +8,12 @@ namespace RECIBOS_OFRENDA
     {
         public static string ImagesBasePath => Get("imagesBasePath", Path.Combine(AppContext.BaseDirectory, "Images", "Others"));
         public static string ThermalLogoFileName => Get("thermalLogoPath", "Vaucher2.png");
+        public static bool UseWindowsPrinter => GetBool("useWindowsPrinter", true);
 
         // Render/Print tuning
         public static int PaperWidthPx => GetInt("paperWidthPx", 384); // 58mm: 384 px @203dpi. (80mm: 576)
         public static int MarginPx => GetInt("marginPx", 12);
+        public static int PrintOffsetXPx => GetInt("printOffsetXPx", 0); // Desplazamiento manual horizontal (+ derecha / - izquierda)
         // Si usas los tamaños en puntos, serán ignorados si defines los tamaños en píxeles
         public static float HeaderFontSize => GetFloat("headerFontSize", 14.0f);
         public static float NormalFontSize => GetFloat("normalFontSize", 11.0f);
@@ -73,6 +75,12 @@ namespace RECIBOS_OFRENDA
         {
             var s = Get(key, defaultValue.ToString(System.Globalization.CultureInfo.InvariantCulture));
             return double.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : defaultValue;
+        }
+
+        private static bool GetBool(string key, bool defaultValue)
+        {
+            var s = Get(key, defaultValue ? "true" : "false");
+            return bool.TryParse(s, out var v) ? v : defaultValue;
         }
     }
 }

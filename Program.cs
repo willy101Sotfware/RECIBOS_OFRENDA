@@ -60,48 +60,65 @@ namespace RECIBOS_OFRENDA
                 var saved = FacturaRenderer.RenderFactura(ts, filePath);
                 Console.WriteLine($"Factura generada: {saved}");
 
-                // Intentar imprimir
-                try
+                // Ruta de impresión según configuración
+                if (AppConfig.UseWindowsPrinter)
                 {
-                    var status = PrintService.PrintBitmap(saved);
-                    Console.WriteLine($"Intento de impresión: {status} - {PrintService.EvaluateStatus((int)status)}");
+                    try
+                    {
+                        Console.WriteLine("Imprimiendo con impresora de Windows (centrado automático)...");
+                        WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
+                        Console.WriteLine("Enviado a la impresora de Windows.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Fallo impresión Windows: {ex.Message}");
+                    }
+                }
+                else
+                {
+                    // Intentar Msprintsdk primero
+                    try
+                    {
+                        var status = PrintService.PrintBitmap(saved);
+                        Console.WriteLine($"Intento de impresión: {status} - {PrintService.EvaluateStatus((int)status)}");
 
-                    // Fallback: si Msprintsdk falla, usar PrintDocument de Windows
-                    if (status != DefaultPrinterStatus.PrinterIsOk)
-                    {
-                        Console.WriteLine("Usando impresora de Windows como alternativa...");
-                        WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
-                        Console.WriteLine("Enviado a la impresora de Windows.");
+                        // Fallback: si Msprintsdk falla, usar PrintDocument de Windows
+                        if (status != DefaultPrinterStatus.PrinterIsOk)
+                        {
+                            Console.WriteLine("Usando impresora de Windows como alternativa...");
+                            WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
+                            Console.WriteLine("Enviado a la impresora de Windows.");
+                        }
                     }
-                }
-                catch (DllNotFoundException)
-                {
-                    Console.WriteLine("Msprintsdk.dll no está disponible. Se omitió la impresión; el archivo BMP quedó guardado.");
-                    // Fallback directo a impresora de Windows
-                    try
+                    catch (DllNotFoundException)
                     {
-                        Console.WriteLine("Usando impresora de Windows como alternativa...");
-                        WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
-                        Console.WriteLine("Enviado a la impresora de Windows.");
+                        Console.WriteLine("Msprintsdk.dll no está disponible. Se omitió la impresión; el archivo BMP quedó guardado.");
+                        // Fallback directo a impresora de Windows
+                        try
+                        {
+                            Console.WriteLine("Usando impresora de Windows como alternativa...");
+                            WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
+                            Console.WriteLine("Enviado a la impresora de Windows.");
+                        }
+                        catch (Exception ex2)
+                        {
+                            Console.WriteLine($"Fallo impresión Windows: {ex2.Message}");
+                        }
                     }
-                    catch (Exception ex2)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"Fallo impresión Windows: {ex2.Message}");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error al imprimir: {ex.Message}. Se mantiene el archivo BMP.");
-                    // Fallback a impresora de Windows
-                    try
-                    {
-                        Console.WriteLine("Usando impresora de Windows como alternativa...");
-                        WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
-                        Console.WriteLine("Enviado a la impresora de Windows.");
-                    }
-                    catch (Exception ex2)
-                    {
-                        Console.WriteLine($"Fallo impresión Windows: {ex2.Message}");
+                        Console.WriteLine($"Error al imprimir: {ex.Message}. Se mantiene el archivo BMP.");
+                        // Fallback a impresora de Windows
+                        try
+                        {
+                            Console.WriteLine("Usando impresora de Windows como alternativa...");
+                            WindowsBmpPrinter.Print(saved, string.IsNullOrWhiteSpace(windowsPrinterName) ? null : windowsPrinterName);
+                            Console.WriteLine("Enviado a la impresora de Windows.");
+                        }
+                        catch (Exception ex2)
+                        {
+                            Console.WriteLine($"Fallo impresión Windows: {ex2.Message}");
+                        }
                     }
                 }
             }
