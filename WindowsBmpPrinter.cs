@@ -24,53 +24,30 @@ namespace RECIBOS_OFRENDA
             // Márgenes a cero para térmica
             doc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
 
-            // Mapear píxeles del BMP a pulgadas usando 203 dpi (térmica típica)
-            const float printerDpi = 203f; // puntos por pulgada
-            float widthInches = bmp.Width / printerDpi;
-            float heightInches = bmp.Height / printerDpi;
-
-            // Definir tamaño de papel según el tamaño real del BMP
-            int widthHundredthsInch = (int)Math.Ceiling(widthInches * 100f);
-            int heightHundredthsInch = (int)Math.Ceiling(heightInches * 100f) + 5; // pequeño margen extra
-
-            // Algunas W80 aceptan ancho ~284 hundredths (≈72 mm imprimibles). Si el BMP es 576px, será ≈2.84"
-            // Usar el ancho calculado; si el driver lo limita, seguirá usando el más cercano.
-            var paper = new PaperSize("Receipt_Custom", widthHundredthsInch, heightHundredthsInch);
-            doc.DefaultPageSettings.PaperSize = paper;
-
-            // También intentar ajustar la resolución si el driver lo soporta
-            try
-            {
-                foreach (PrinterResolution res in doc.PrinterSettings.PrinterResolutions)
-                {
-                    if (res.X == 203 && res.Y == 203)
-                    {
-                        doc.DefaultPageSettings.PrinterResolution = res;
-                        break;
-                    }
-                }
-            }
-            catch { /* algunos drivers no exponen resoluciones */ }
+            // Usar papel y resolución por defecto del driver. Escalar al área imprimible.
 
             doc.PrintPage += (s, e) =>
             {
                 try
                 {
-                    // Calcular tamaño de dibujo en píxeles destino según DPI real del dispositivo
+                    var printable = e.PageSettings.PrintableArea; // hundredths of an inch
                     float targetDpiX = e.Graphics.DpiX;
                     float targetDpiY = e.Graphics.DpiY;
 
-                    // Mantener tamaño físico del BMP: px->pulgadas a 203 dpi, luego a px del dispositivo
-                    int drawWidthPx = (int)Math.Round(widthInches * targetDpiX);
-                    int drawHeightPx = (int)Math.Round(heightInches * targetDpiY);
+                    int printableWidthPx  = (int)Math.Round(printable.Width  / 100f * targetDpiX);
+                    int printableHeightPx = (int)Math.Round(printable.Height / 100f * targetDpiY);
+                    int printableLeftPx   = (int)Math.Round(printable.X      / 100f * targetDpiX);
+                    int printableTopPx    = (int)Math.Round(printable.Y      / 100f * targetDpiY);
 
-                    // Usar área imprimible del driver para evitar recortes
-                    var printable = e.PageSettings.PrintableArea; // hundredths of an inch
-                    int printableWidthPx = (int)Math.Round(printable.Width / 100f * targetDpiX);
-                    int printableLeftPx = (int)Math.Round(printable.X / 100f * targetDpiX);
-                    int printableTopPx = (int)Math.Round(printable.Y / 100f * targetDpiY);
+                    // Escalar para caber al ancho imprimible manteniendo aspecto
+                    float scale = Math.Min((float)printableWidthPx / bmp.Width, (float)printableHeightPx / bmp.Height);
+                    // Importante: no ampliar nunca, solo reducir si es necesario
+                    if (scale > 1f) scale = 1f;
+                    if (scale <= 0) scale = 1f;
+                    int drawWidthPx = (int)Math.Floor(bmp.Width * scale);
+                    int drawHeightPx = (int)Math.Floor(bmp.Height * scale);
 
-                    // Centrar horizontalmente
+                    // Centrar horizontalmente, alinear arriba
                     int x = printableLeftPx + Math.Max(0, (printableWidthPx - drawWidthPx) / 2);
                     int y = printableTopPx;
 

@@ -8,12 +8,13 @@ namespace RECIBOS_OFRENDA
 {
     internal static class FacturaRenderer
     {
-        public static string RenderFactura(FacturaData ts, string outputPath, int width = 384)
+        public static string RenderFactura(FacturaData ts, string outputPath, int width = 0)
         {
             var culture = new CultureInfo("es-CO");
-            int leftMargin = 8;
-            int rightMargin = 8;
-            int paperWidth = width;
+            // Parámetros desde configuración (con defaults adecuados a W80)
+            int paperWidth = width > 0 ? width : AppConfig.PaperWidthPx; // 576 para 80mm, 384 para 58mm
+            int leftMargin = AppConfig.MarginPx;
+            int rightMargin = AppConfig.MarginPx;
             int yPos = 16;
             using var bmp = new Bitmap(paperWidth, 4000);
             bmp.SetResolution(203, 203);
@@ -24,21 +25,48 @@ namespace RECIBOS_OFRENDA
 
             using var blackBrush = new SolidBrush(Color.Black);
             using var pen = new Pen(Color.Black, 1);
-            using var headerFont = new Font("Arial", 12, FontStyle.Bold);
-            using var normalFont = new Font("Arial", 9, FontStyle.Regular);
-            using var smallFont = new Font("Arial", 8, FontStyle.Regular);
+            // Preferir tamaños en píxeles si están definidos (>0), de lo contrario usar puntos
+            using var headerFont = AppConfig.HeaderFontPx > 0
+                ? new Font("Arial", AppConfig.HeaderFontPx, FontStyle.Bold, GraphicsUnit.Pixel)
+                : new Font("Arial", AppConfig.HeaderFontSize, FontStyle.Bold, GraphicsUnit.Point);
+            using var normalFont = AppConfig.NormalFontPx > 0
+                ? new Font("Arial", AppConfig.NormalFontPx, FontStyle.Regular, GraphicsUnit.Pixel)
+                : new Font("Arial", AppConfig.NormalFontSize, FontStyle.Regular, GraphicsUnit.Point);
+            using var smallFont = AppConfig.SmallFontPx > 0
+                ? new Font("Arial", AppConfig.SmallFontPx, FontStyle.Regular, GraphicsUnit.Pixel)
+                : new Font("Arial", AppConfig.SmallFontSize, FontStyle.Regular, GraphicsUnit.Point);
 
-            float lineHeight = normalFont.GetHeight(g) + 2;
+            float lineHeight = normalFont.GetHeight(g) + 3; // más espacio para mejorar legibilidad en térmica
 
             // Logo (opcional)
             if (File.Exists(AppConfig.ThermalLogoFullPath))
             {
                 using var logo = Image.FromFile(AppConfig.ThermalLogoFullPath);
-                var maxW = paperWidth - leftMargin - rightMargin;
+                int usableWidth = paperWidth - leftMargin - rightMargin;
+                var maxPercentW = (int)Math.Floor(usableWidth * AppConfig.LogoMaxPercent);
+
+                // convertir límites físicos en mm a píxeles a 203 dpi
+                const double dpi = 203.0;
+                int maxMmWpx = (int)Math.Round(AppConfig.LogoMaxWidthMm / 25.4 * dpi);
+                int maxMmHpx = (int)Math.Round(AppConfig.LogoMaxHeightMm / 25.4 * dpi);
+
+                int maxW = Math.Min(maxPercentW, maxMmWpx);
+                if (maxW <= 0) maxW = maxPercentW;
+
                 var ratio = (double)logo.Height / logo.Width;
-                var lw = Math.Min(maxW, logo.Width);
-                var lh = (int)(lw * ratio);
-                var xLogo = (paperWidth - lw) / 2;
+                int lw = Math.Min(maxW, logo.Width);
+                int lh = (int)Math.Round(lw * ratio);
+                if (maxMmHpx > 0 && lh > maxMmHpx)
+                {
+                    lh = maxMmHpx;
+                    lw = (int)Math.Round(lh / ratio);
+                }
+
+                // Asegurar que no se salga del área útil
+                if (lw > usableWidth) lw = usableWidth;
+                if (lh <= 0) lh = (int)Math.Max(1, usableWidth * ratio);
+
+                var xLogo = leftMargin + (usableWidth - lw) / 2;
                 g.DrawImage(logo, new Rectangle(xLogo, yPos, lw, lh));
                 yPos += lh + 6;
             }
@@ -81,7 +109,7 @@ namespace RECIBOS_OFRENDA
 
             DrawLine(g, $"Estado: {Safe(ts.EstadoTransaccionVerb, "")}", normalFont, blackBrush, leftMargin, ref yPos, lineHeight);
             var fechaText = string.IsNullOrWhiteSpace(ts.FechaTexto) ? DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss") : ts.FechaTexto;
-            DrawLine(g, $"Fecha : {fechaText}", smallFont, blackBrush, leftMargin, ref yPos, lineHeight * 2);
+            DrawLine(g, $"Fecha : {fechaText}", smallFont, blackBrush, leftMargin, ref yPos, lineHeight * 1.6f);
 
             // Gracias centrado
             string thanks = "Gracias por su pago!";
